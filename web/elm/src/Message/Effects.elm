@@ -116,10 +116,6 @@ stickyHeaderConfig =
     }
 
 
-
--- | Jobs Concourse.PipelineIdentifier
-
-
 type Effect
     = ApiCall Route
     | FetchJobs Concourse.PipelineIdentifier
@@ -137,7 +133,6 @@ type Effect
     | FetchUser
     | FetchBuild Float Int
     | FetchJobBuild Concourse.JobBuildIdentifier
-    | FetchBuildJobDetails Concourse.JobIdentifier
     | FetchBuildHistory Concourse.JobIdentifier (Maybe Page)
     | FetchBuildPrep Float Int
     | FetchBuildPlan Concourse.BuildId
@@ -214,11 +209,23 @@ toUrl route =
                 ]
                 []
 
+        RouteJobs { teamName, pipelineName } ->
+            Url.Builder.absolute
+                [ "api"
+                , "v1"
+                , "teams"
+                , teamName
+                , "pipelines"
+                , pipelineName
+                , "jobs"
+                ]
+                []
+
 
 method : Route -> String
 method route =
     case route of
-        RouteJob _ ->
+        _ ->
             "GET"
 
 
@@ -230,6 +237,13 @@ expect route =
                 Json.Decode.map Job <|
                     Concourse.decodeJob
                         { teamName = teamName, pipelineName = pipelineName }
+
+        RouteJobs { teamName, pipelineName } ->
+            Http.expectJson <|
+                Json.Decode.map Jobs <|
+                    Json.Decode.list <|
+                        Concourse.decodeJob
+                            { teamName = teamName, pipelineName = pipelineName }
 
 
 runEffect : Effect -> Navigation.Key -> Concourse.CSRFToken -> Cmd Callback
@@ -400,10 +414,6 @@ runEffect effect key csrfToken =
         FetchJobBuild jbi ->
             Network.Build.fetchJobBuild jbi
                 |> Task.attempt BuildFetched
-
-        FetchBuildJobDetails buildJob ->
-            Network.Job.fetchJob buildJob
-                |> Task.attempt BuildJobDetailsFetched
 
         FetchBuildHistory job page ->
             Network.Build.fetchJobBuilds job page

@@ -25,10 +25,12 @@ type alias Fetched a =
 
 type Route
     = RouteJob Concourse.JobIdentifier
+    | RouteJobs Concourse.PipelineIdentifier
 
 
 type ApiEntity
     = Job Concourse.Job
+    | Jobs (List Concourse.Job)
 
 
 type Callback
@@ -58,7 +60,6 @@ type Callback
     | APIDataFetched (Fetched ( Time.Posix, Concourse.APIData ))
     | LoggedOut (Fetched ())
     | ScreenResized Browser.Dom.Viewport
-    | BuildJobDetailsFetched (Fetched Concourse.Job)
     | BuildFetched (Fetched Concourse.Build)
     | BuildPrepFetched (Fetched Concourse.BuildPrep)
     | BuildHistoryFetched (Fetched (Paginated Concourse.Build))

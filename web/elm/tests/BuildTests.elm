@@ -168,48 +168,64 @@ all =
                 -> ( Application.Model, List Effects.Effect )
             fetchJobDetails =
                 Application.handleCallback <|
-                    Callback.BuildJobDetailsFetched <|
-                        Ok
-                            { pipeline =
-                                { teamName = "team"
-                                , pipelineName = "pipeline"
-                                }
-                            , name = "job"
+                    Callback.ApiResponse
+                        (Callback.RouteJob
+                            { teamName = "team"
                             , pipelineName = "pipeline"
-                            , teamName = "team"
-                            , nextBuild = Nothing
-                            , finishedBuild = Nothing
-                            , transitionBuild = Nothing
-                            , paused = False
-                            , disableManualTrigger = False
-                            , inputs = []
-                            , outputs = []
-                            , groups = []
+                            , jobName = "job"
                             }
+                        )
+                    <|
+                        Ok <|
+                            Callback.Job
+                                { pipeline =
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    }
+                                , name = "job"
+                                , pipelineName = "pipeline"
+                                , teamName = "team"
+                                , nextBuild = Nothing
+                                , finishedBuild = Nothing
+                                , transitionBuild = Nothing
+                                , paused = False
+                                , disableManualTrigger = False
+                                , inputs = []
+                                , outputs = []
+                                , groups = []
+                                }
 
             fetchJobDetailsNoTrigger :
                 Application.Model
                 -> ( Application.Model, List Effects.Effect )
             fetchJobDetailsNoTrigger =
                 Application.handleCallback <|
-                    Callback.BuildJobDetailsFetched <|
-                        Ok
-                            { pipeline =
-                                { teamName = "team"
-                                , pipelineName = "pipeline"
-                                }
-                            , name = "job"
+                    Callback.ApiResponse
+                        (Callback.RouteJob
+                            { teamName = "team"
                             , pipelineName = "pipeline"
-                            , teamName = "team"
-                            , nextBuild = Nothing
-                            , finishedBuild = Nothing
-                            , transitionBuild = Nothing
-                            , paused = False
-                            , disableManualTrigger = True
-                            , inputs = []
-                            , outputs = []
-                            , groups = []
+                            , jobName = "job"
                             }
+                        )
+                    <|
+                        Ok <|
+                            Callback.Job
+                                { pipeline =
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    }
+                                , name = "job"
+                                , pipelineName = "pipeline"
+                                , teamName = "team"
+                                , nextBuild = Nothing
+                                , finishedBuild = Nothing
+                                , transitionBuild = Nothing
+                                , paused = False
+                                , disableManualTrigger = True
+                                , inputs = []
+                                , outputs = []
+                                , groups = []
+                                }
 
             fetchHistory :
                 Application.Model
@@ -974,24 +990,32 @@ all =
                         (Callback.BuildFetched <| Ok startedBuild)
                     |> Tuple.first
                     |> Application.handleCallback
-                        (Callback.BuildJobDetailsFetched <|
-                            Ok
-                                { pipeline =
-                                    { teamName = "team"
-                                    , pipelineName = "pipeline"
-                                    }
-                                , name = ""
+                        (Callback.ApiResponse
+                            (Callback.RouteJob
+                                { teamName = "team"
                                 , pipelineName = "pipeline"
-                                , teamName = "team"
-                                , nextBuild = Nothing
-                                , finishedBuild = Nothing
-                                , transitionBuild = Nothing
-                                , paused = False
-                                , disableManualTrigger = False
-                                , inputs = []
-                                , outputs = []
-                                , groups = []
+                                , jobName = "job"
                                 }
+                            )
+                         <|
+                            Ok <|
+                                Callback.Job
+                                    { pipeline =
+                                        { teamName = "team"
+                                        , pipelineName = "pipeline"
+                                        }
+                                    , name = ""
+                                    , pipelineName = "pipeline"
+                                    , teamName = "team"
+                                    , nextBuild = Nothing
+                                    , finishedBuild = Nothing
+                                    , transitionBuild = Nothing
+                                    , paused = False
+                                    , disableManualTrigger = False
+                                    , inputs = []
+                                    , outputs = []
+                                    , groups = []
+                                    }
                         )
                     |> Tuple.first
                     |> Application.update
@@ -1255,11 +1279,12 @@ all =
                                 Nothing
                             )
                         , Common.contains
-                            (Effects.FetchBuildJobDetails
-                                { teamName = "team"
-                                , pipelineName = "pipeline"
-                                , jobName = "job"
-                                }
+                            (Effects.ApiCall <|
+                                Callback.RouteJob
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
+                                    }
                             )
                         ]
             , test "header is 60px tall" <|
