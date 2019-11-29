@@ -118,7 +118,10 @@ init flags =
           , shiftDown = False
           , isUserMenuExpanded = False
           }
-        , [ GetCurrentTime, GetCurrentTimeZone, FetchAllPipelines ]
+        , [ GetCurrentTime
+          , GetCurrentTimeZone
+          , FetchAllPipelines
+          ]
         )
 
 
