@@ -118,7 +118,6 @@ stickyHeaderConfig =
 
 type Effect
     = ApiCall Route
-    | FetchJobs Concourse.PipelineIdentifier
     | FetchJobBuilds Concourse.JobIdentifier (Maybe Page)
     | FetchResource Concourse.ResourceIdentifier
     | FetchCheck Int
@@ -241,9 +240,7 @@ expect route =
         RouteJobs { teamName, pipelineName } ->
             Http.expectJson <|
                 Json.Decode.map Jobs <|
-                    Json.Decode.list <|
-                        Concourse.decodeJob
-                            { teamName = teamName, pipelineName = pipelineName }
+                    Json.Decode.value
 
 
 runEffect : Effect -> Navigation.Key -> Concourse.CSRFToken -> Cmd Callback
@@ -262,10 +259,6 @@ runEffect effect key csrfToken =
                 }
                 |> Http.toTask
                 |> Task.attempt (ApiResponse route)
-
-        FetchJobs id ->
-            Network.Job.fetchJobsRaw id
-                |> Task.attempt JobsFetched
 
         FetchJobBuilds id page ->
             Network.Build.fetchJobBuilds id page
