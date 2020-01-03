@@ -584,7 +584,7 @@ handleBuildFetched build ( model, effects ) =
             case ( currentJob model, build.job ) of
                 ( Nothing, Just buildJob ) ->
                     [ ApiCall (RouteJob buildJob)
-                    , FetchBuildHistory buildJob Nothing
+                    , ApiCall (RouteJobBuilds buildJob Nothing)
                     ]
 
                 _ ->

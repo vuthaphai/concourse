@@ -120,7 +120,12 @@ all =
                         (Ok
                             { id = 1
                             , name = "1"
-                            , job = Nothing
+                            , job =
+                                Just
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
+                                    }
                             , status = status
                             , duration =
                                 { startedAt = Nothing
@@ -132,25 +137,38 @@ all =
                     )
                     >> Tuple.first
                     >> Application.handleCallback
-                        (Callback.BuildHistoryFetched
-                            (Ok
-                                { pagination =
-                                    { previousPage = Nothing
-                                    , nextPage = Nothing
-                                    }
-                                , content =
-                                    [ { id = 0
-                                      , name = "0"
-                                      , job = Nothing
-                                      , status = status
-                                      , duration =
-                                            { startedAt = Nothing
-                                            , finishedAt = Nothing
-                                            }
-                                      , reapTime = Nothing
-                                      }
-                                    ]
+                        (Callback.ApiResponse
+                            (Callback.RouteJobBuilds
+                                { teamName = "team"
+                                , pipelineName = "pipeline"
+                                , jobName = "job"
                                 }
+                                Nothing
+                            )
+                            (Ok <|
+                                Callback.Builds
+                                    { pagination =
+                                        { previousPage = Nothing
+                                        , nextPage = Nothing
+                                        }
+                                    , content =
+                                        [ { id = 1
+                                          , name = "1"
+                                          , job =
+                                                Just
+                                                    { teamName = "team"
+                                                    , pipelineName = "pipeline"
+                                                    , jobName = "job"
+                                                    }
+                                          , status = status
+                                          , duration =
+                                                { startedAt = Nothing
+                                                , finishedAt = Nothing
+                                                }
+                                          , reapTime = Nothing
+                                          }
+                                        ]
+                                    }
                             )
                         )
                     >> Tuple.first
@@ -232,14 +250,22 @@ all =
                 -> ( Application.Model, List Effects.Effect )
             fetchHistory =
                 Application.handleCallback
-                    (Callback.BuildHistoryFetched
-                        (Ok
-                            { pagination =
-                                { previousPage = Nothing
-                                , nextPage = Nothing
-                                }
-                            , content = [ theBuild ]
+                    (Callback.ApiResponse
+                        (Callback.RouteJobBuilds
+                            { teamName = "team"
+                            , pipelineName = "pipeline"
+                            , jobName = "job"
                             }
+                            Nothing
+                        )
+                        (Ok <|
+                            Callback.Builds
+                                { pagination =
+                                    { previousPage = Nothing
+                                    , nextPage = Nothing
+                                    }
+                                , content = [ theBuild ]
+                                }
                         )
                     )
 
@@ -575,7 +601,22 @@ all =
                         , fragment = Just "Lstepid:1"
                         }
                         |> Tuple.first
-                        |> fetchBuildWithStatus BuildStatusFailed
+                        |> Application.handleCallback
+                            (Callback.BuildFetched
+                                (Ok
+                                    { id = 1
+                                    , name = "1"
+                                    , job = Nothing
+                                    , status = BuildStatusFailed
+                                    , duration =
+                                        { startedAt = Nothing
+                                        , finishedAt = Nothing
+                                        }
+                                    , reapTime = Nothing
+                                    }
+                                )
+                            )
+                        |> Tuple.first
                         |> Application.view
                         |> .title
                         |> Expect.equal "#1 - Concourse"
@@ -1271,12 +1312,13 @@ all =
                     >> Tuple.second
                     >> Expect.all
                         [ Common.contains
-                            (Effects.FetchBuildHistory
-                                { teamName = "team"
-                                , pipelineName = "pipeline"
-                                , jobName = "job"
-                                }
-                                Nothing
+                            (Effects.ApiCall <|
+                                Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
+                                    }
+                                    Nothing
                             )
                         , Common.contains
                             (Effects.ApiCall <|
@@ -1530,35 +1572,43 @@ all =
                     givenBuildFetched
                         >> Tuple.first
                         >> Application.handleCallback
-                            (Callback.BuildHistoryFetched
-                                (Ok
-                                    { pagination =
-                                        { previousPage = Nothing
-                                        , nextPage =
-                                            Just
-                                                { direction = Until 1
-                                                , limit = 100
-                                                }
-                                        }
-                                    , content =
-                                        [ theBuild
-                                        , { id = 2
-                                          , name = "2"
-                                          , job =
-                                                Just
-                                                    { teamName = "team"
-                                                    , pipelineName = "pipeline"
-                                                    , jobName = "job"
-                                                    }
-                                          , status = BuildStatusSucceeded
-                                          , duration =
-                                                { startedAt = Just <| Time.millisToPosix 0
-                                                , finishedAt = Just <| Time.millisToPosix 0
-                                                }
-                                          , reapTime = Nothing
-                                          }
-                                        ]
+                            (Callback.ApiResponse
+                                (Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
                                     }
+                                    Nothing
+                                )
+                                (Ok <|
+                                    Callback.Builds
+                                        { pagination =
+                                            { previousPage = Nothing
+                                            , nextPage =
+                                                Just
+                                                    { direction = Until 1
+                                                    , limit = 100
+                                                    }
+                                            }
+                                        , content =
+                                            [ theBuild
+                                            , { id = 2
+                                              , name = "2"
+                                              , job =
+                                                    Just
+                                                        { teamName = "team"
+                                                        , pipelineName = "pipeline"
+                                                        , jobName = "job"
+                                                        }
+                                              , status = BuildStatusSucceeded
+                                              , duration =
+                                                    { startedAt = Just <| Time.millisToPosix 0
+                                                    , finishedAt = Just <| Time.millisToPosix 0
+                                                    }
+                                              , reapTime = Nothing
+                                              }
+                                            ]
+                                        }
                                 )
                             )
                         >> Tuple.first
@@ -1579,35 +1629,43 @@ all =
                     givenBuildFetched
                         >> Tuple.first
                         >> Application.handleCallback
-                            (Callback.BuildHistoryFetched
-                                (Ok
-                                    { pagination =
-                                        { previousPage = Nothing
-                                        , nextPage =
-                                            Just
-                                                { direction = Until 1
-                                                , limit = 100
-                                                }
-                                        }
-                                    , content =
-                                        [ theBuild
-                                        , { id = 2
-                                          , name = "2"
-                                          , job =
-                                                Just
-                                                    { teamName = "team"
-                                                    , pipelineName = "pipeline"
-                                                    , jobName = "job"
-                                                    }
-                                          , status = BuildStatusSucceeded
-                                          , duration =
-                                                { startedAt = Just <| Time.millisToPosix 0
-                                                , finishedAt = Just <| Time.millisToPosix 0
-                                                }
-                                          , reapTime = Nothing
-                                          }
-                                        ]
+                            (Callback.ApiResponse
+                                (Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
                                     }
+                                    Nothing
+                                )
+                                (Ok <|
+                                    Callback.Builds
+                                        { pagination =
+                                            { previousPage = Nothing
+                                            , nextPage =
+                                                Just
+                                                    { direction = Until 1
+                                                    , limit = 100
+                                                    }
+                                            }
+                                        , content =
+                                            [ theBuild
+                                            , { id = 2
+                                              , name = "2"
+                                              , job =
+                                                    Just
+                                                        { teamName = "team"
+                                                        , pipelineName = "pipeline"
+                                                        , jobName = "job"
+                                                        }
+                                              , status = BuildStatusSucceeded
+                                              , duration =
+                                                    { startedAt = Just <| Time.millisToPosix 0
+                                                    , finishedAt = Just <| Time.millisToPosix 0
+                                                    }
+                                              , reapTime = Nothing
+                                              }
+                                            ]
+                                        }
                                 )
                             )
                         >> Tuple.first
@@ -1625,35 +1683,43 @@ all =
                     givenBuildFetched
                         >> Tuple.first
                         >> Application.handleCallback
-                            (Callback.BuildHistoryFetched
-                                (Ok
-                                    { pagination =
-                                        { previousPage = Nothing
-                                        , nextPage =
-                                            Just
-                                                { direction = Until 1
-                                                , limit = 100
-                                                }
-                                        }
-                                    , content =
-                                        [ theBuild
-                                        , { id = 2
-                                          , name = "2"
-                                          , job =
-                                                Just
-                                                    { teamName = "team"
-                                                    , pipelineName = "pipeline"
-                                                    , jobName = "job"
-                                                    }
-                                          , status = BuildStatusSucceeded
-                                          , duration =
-                                                { startedAt = Just <| Time.millisToPosix 0
-                                                , finishedAt = Just <| Time.millisToPosix 0
-                                                }
-                                          , reapTime = Nothing
-                                          }
-                                        ]
+                            (Callback.ApiResponse
+                                (Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
                                     }
+                                    Nothing
+                                )
+                                (Ok <|
+                                    Callback.Builds
+                                        { pagination =
+                                            { previousPage = Nothing
+                                            , nextPage =
+                                                Just
+                                                    { direction = Until 1
+                                                    , limit = 100
+                                                    }
+                                            }
+                                        , content =
+                                            [ theBuild
+                                            , { id = 2
+                                              , name = "2"
+                                              , job =
+                                                    Just
+                                                        { teamName = "team"
+                                                        , pipelineName = "pipeline"
+                                                        , jobName = "job"
+                                                        }
+                                              , status = BuildStatusSucceeded
+                                              , duration =
+                                                    { startedAt = Just <| Time.millisToPosix 0
+                                                    , finishedAt = Just <| Time.millisToPosix 0
+                                                    }
+                                              , reapTime = Nothing
+                                              }
+                                            ]
+                                        }
                                 )
                             )
                         >> Tuple.first
@@ -1671,18 +1737,26 @@ all =
                     givenBuildFetched
                         >> Tuple.first
                         >> Application.handleCallback
-                            (Callback.BuildHistoryFetched
-                                (Ok
-                                    { pagination =
-                                        { previousPage = Nothing
-                                        , nextPage =
-                                            Just
-                                                { direction = Until 1
-                                                , limit = 100
-                                                }
-                                        }
-                                    , content = [ theBuild ]
+                            (Callback.ApiResponse
+                                (Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
                                     }
+                                    Nothing
+                                )
+                                (Ok <|
+                                    Callback.Builds
+                                        { pagination =
+                                            { previousPage = Nothing
+                                            , nextPage =
+                                                Just
+                                                    { direction = Until 1
+                                                    , limit = 100
+                                                    }
+                                            }
+                                        , content = [ theBuild ]
+                                        }
                                 )
                             )
                         >> Tuple.first
@@ -1702,18 +1776,26 @@ all =
                     givenBuildFetched
                         >> Tuple.first
                         >> Application.handleCallback
-                            (Callback.BuildHistoryFetched
-                                (Ok
-                                    { pagination =
-                                        { previousPage = Nothing
-                                        , nextPage =
-                                            Just
-                                                { direction = Until 1
-                                                , limit = 100
-                                                }
-                                        }
-                                    , content = [ theBuild ]
+                            (Callback.ApiResponse
+                                (Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
                                     }
+                                    Nothing
+                                )
+                                (Ok <|
+                                    Callback.Builds
+                                        { pagination =
+                                            { previousPage = Nothing
+                                            , nextPage =
+                                                Just
+                                                    { direction = Until 1
+                                                    , limit = 100
+                                                    }
+                                            }
+                                        , content = [ theBuild ]
+                                        }
                                 )
                             )
                         >> Tuple.first
@@ -1721,29 +1803,38 @@ all =
                             (Subscription.ElementVisible ( "1", True ))
                         >> Tuple.second
                         >> Expect.equal
-                            [ Effects.FetchBuildHistory
-                                { teamName = "team"
-                                , pipelineName = "pipeline"
-                                , jobName = "job"
-                                }
-                                (Just { direction = Until 1, limit = 100 })
+                            [ Effects.ApiCall <|
+                                Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
+                                    }
+                                    (Just { direction = Until 1, limit = 100 })
                             ]
                 , test "scrolling to last build while fetching fetches no more" <|
                     givenBuildFetched
                         >> Tuple.first
                         >> Application.handleCallback
-                            (Callback.BuildHistoryFetched
-                                (Ok
-                                    { pagination =
-                                        { previousPage = Nothing
-                                        , nextPage =
-                                            Just
-                                                { direction = Until 1
-                                                , limit = 100
-                                                }
-                                        }
-                                    , content = [ theBuild ]
+                            (Callback.ApiResponse
+                                (Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
                                     }
+                                    Nothing
+                                )
+                                (Ok <|
+                                    Callback.Builds
+                                        { pagination =
+                                            { previousPage = Nothing
+                                            , nextPage =
+                                                Just
+                                                    { direction = Until 1
+                                                    , limit = 100
+                                                    }
+                                            }
+                                        , content = [ theBuild ]
+                                        }
                                 )
                             )
                         >> Tuple.first
@@ -1765,77 +1856,102 @@ all =
                     givenBuildFetched
                         >> Tuple.first
                         >> Application.handleCallback
-                            (Callback.BuildHistoryFetched
-                                (Ok
-                                    { pagination =
-                                        { previousPage = Nothing
-                                        , nextPage =
-                                            Just
-                                                { direction = Until 1
-                                                , limit = 100
-                                                }
-                                        }
-                                    , content = [ theBuild ]
+                            (Callback.ApiResponse
+                                (Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
                                     }
+                                    Nothing
+                                )
+                                (Ok <|
+                                    Callback.Builds
+                                        { pagination =
+                                            { previousPage = Nothing
+                                            , nextPage =
+                                                Just
+                                                    { direction = Until 1
+                                                    , limit = 100
+                                                    }
+                                            }
+                                        , content = [ theBuild ]
+                                        }
                                 )
                             )
                         >> Tuple.first
                         >> Application.handleCallback
-                            (Callback.BuildHistoryFetched
-                                (Ok
-                                    { pagination =
-                                        { previousPage = Nothing
-                                        , nextPage =
-                                            Just
-                                                { direction = Until 2
-                                                , limit = 100
-                                                }
-                                        }
-                                    , content =
-                                        [ { id = 2
-                                          , name = "2"
-                                          , job =
-                                                Just
-                                                    { teamName = "team"
-                                                    , pipelineName = "pipeline"
-                                                    , jobName = "job"
-                                                    }
-                                          , status = BuildStatusSucceeded
-                                          , duration =
-                                                { startedAt = Nothing
-                                                , finishedAt = Nothing
-                                                }
-                                          , reapTime = Nothing
-                                          }
-                                        ]
+                            (Callback.ApiResponse
+                                (Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
                                     }
+                                    Nothing
+                                )
+                                (Ok <|
+                                    Callback.Builds
+                                        { pagination =
+                                            { previousPage = Nothing
+                                            , nextPage =
+                                                Just
+                                                    { direction = Until 2
+                                                    , limit = 100
+                                                    }
+                                            }
+                                        , content =
+                                            [ { id = 2
+                                              , name = "2"
+                                              , job =
+                                                    Just
+                                                        { teamName = "team"
+                                                        , pipelineName = "pipeline"
+                                                        , jobName = "job"
+                                                        }
+                                              , status = BuildStatusSucceeded
+                                              , duration =
+                                                    { startedAt = Nothing
+                                                    , finishedAt = Nothing
+                                                    }
+                                              , reapTime = Nothing
+                                              }
+                                            ]
+                                        }
                                 )
                             )
                         >> Tuple.second
                         >> Common.notContains
-                            (Effects.FetchBuildHistory
-                                { teamName = "team"
-                                , pipelineName = "pipeline"
-                                , jobName = "job"
-                                }
-                                (Just { direction = Until 2, limit = 100 })
+                            (Effects.ApiCall <|
+                                Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
+                                    }
+                                    (Just { direction = Until 2, limit = 100 })
                             )
                 , test "if build is present in history, checks its visibility" <|
                     givenBuildFetched
                         >> Tuple.first
                         >> Application.handleCallback
-                            (Callback.BuildHistoryFetched
-                                (Ok
-                                    { pagination =
-                                        { previousPage = Nothing
-                                        , nextPage =
-                                            Just
-                                                { direction = Until 1
-                                                , limit = 100
-                                                }
-                                        }
-                                    , content = [ theBuild ]
+                            (Callback.ApiResponse
+                                (Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
                                     }
+                                    Nothing
+                                )
+                                (Ok <|
+                                    Callback.Builds
+                                        { pagination =
+                                            { previousPage = Nothing
+                                            , nextPage =
+                                                Just
+                                                    { direction = Until 1
+                                                    , limit = 100
+                                                    }
+                                            }
+                                        , content = [ theBuild ]
+                                        }
                                 )
                             )
                         >> Tuple.second
@@ -1844,18 +1960,26 @@ all =
                     givenBuildFetched
                         >> Tuple.first
                         >> Application.handleCallback
-                            (Callback.BuildHistoryFetched
-                                (Ok
-                                    { pagination =
-                                        { previousPage = Nothing
-                                        , nextPage =
-                                            Just
-                                                { direction = Until 1
-                                                , limit = 100
-                                                }
-                                        }
-                                    , content = [ theBuild ]
+                            (Callback.ApiResponse
+                                (Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
                                     }
+                                    Nothing
+                                )
+                                (Ok <|
+                                    Callback.Builds
+                                        { pagination =
+                                            { previousPage = Nothing
+                                            , nextPage =
+                                                Just
+                                                    { direction = Until 1
+                                                    , limit = 100
+                                                    }
+                                            }
+                                        , content = [ theBuild ]
+                                        }
                                 )
                             )
                         >> Tuple.first
@@ -1867,18 +1991,26 @@ all =
                     givenBuildFetched
                         >> Tuple.first
                         >> Application.handleCallback
-                            (Callback.BuildHistoryFetched
-                                (Ok
-                                    { pagination =
-                                        { previousPage = Nothing
-                                        , nextPage =
-                                            Just
-                                                { direction = Until 1
-                                                , limit = 100
-                                                }
-                                        }
-                                    , content = [ theBuild ]
+                            (Callback.ApiResponse
+                                (Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
                                     }
+                                    Nothing
+                                )
+                                (Ok <|
+                                    Callback.Builds
+                                        { pagination =
+                                            { previousPage = Nothing
+                                            , nextPage =
+                                                Just
+                                                    { direction = Until 1
+                                                    , limit = 100
+                                                    }
+                                            }
+                                        , content = [ theBuild ]
+                                        }
                                 )
                             )
                         >> Tuple.first
@@ -1893,44 +2025,53 @@ all =
                     givenBuildFetched
                         >> Tuple.first
                         >> Application.handleCallback
-                            (Callback.BuildHistoryFetched
-                                (Ok
-                                    { pagination =
-                                        { previousPage = Nothing
-                                        , nextPage =
-                                            Just
-                                                { direction = Until 2
-                                                , limit = 100
-                                                }
-                                        }
-                                    , content =
-                                        [ { id = 2
-                                          , name = "2"
-                                          , job =
-                                                Just
-                                                    { teamName = "team"
-                                                    , pipelineName = "pipeline"
-                                                    , jobName = "job"
-                                                    }
-                                          , status = BuildStatusSucceeded
-                                          , duration =
-                                                { startedAt = Nothing
-                                                , finishedAt = Nothing
-                                                }
-                                          , reapTime = Nothing
-                                          }
-                                        ]
+                            (Callback.ApiResponse
+                                (Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
                                     }
+                                    Nothing
+                                )
+                                (Ok <|
+                                    Callback.Builds
+                                        { pagination =
+                                            { previousPage = Nothing
+                                            , nextPage =
+                                                Just
+                                                    { direction = Until 2
+                                                    , limit = 100
+                                                    }
+                                            }
+                                        , content =
+                                            [ { id = 2
+                                              , name = "2"
+                                              , job =
+                                                    Just
+                                                        { teamName = "team"
+                                                        , pipelineName = "pipeline"
+                                                        , jobName = "job"
+                                                        }
+                                              , status = BuildStatusSucceeded
+                                              , duration =
+                                                    { startedAt = Nothing
+                                                    , finishedAt = Nothing
+                                                    }
+                                              , reapTime = Nothing
+                                              }
+                                            ]
+                                        }
                                 )
                             )
                         >> Tuple.second
                         >> Expect.equal
-                            [ Effects.FetchBuildHistory
-                                { teamName = "team"
-                                , pipelineName = "pipeline"
-                                , jobName = "job"
-                                }
-                                (Just { direction = Until 2, limit = 100 })
+                            [ Effects.ApiCall <|
+                                Callback.RouteJobBuilds
+                                    { teamName = "team"
+                                    , pipelineName = "pipeline"
+                                    , jobName = "job"
+                                    }
+                                    (Just { direction = Until 2, limit = 100 })
                             ]
                 , test "trigger build button is styled as a box of the color of the build status" <|
                     givenHistoryAndDetailsFetched
@@ -3525,12 +3666,14 @@ taskStepLabel =
     , containing [ text "task:" ]
     ]
 
+
 setPipelineStepLabel =
     [ style "color" Colors.pending
     , style "line-height" "28px"
     , style "padding-left" "6px"
     , containing [ text "set_pipeline:" ]
     ]
+
 
 firstOccurrenceLabelID =
     Message.Message.FirstOccurrenceGetStepLabel

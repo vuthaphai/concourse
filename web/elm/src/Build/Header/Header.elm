@@ -20,7 +20,7 @@ import HoverState
 import Html exposing (Html)
 import Keyboard
 import List.Extra
-import Message.Callback exposing (Callback(..))
+import Message.Callback exposing (ApiEntity(..), Callback(..), Route(..))
 import Message.Effects as Effects exposing (Effect(..), ScrollDirection(..))
 import Message.Message exposing (DomID(..), Message(..))
 import Message.Subscription
@@ -256,7 +256,8 @@ handleDelivery delivery ( model, effects ) =
                 Just job ->
                     if needsToFetchMorePages then
                         ( { model | fetchingHistory = True }
-                        , effects ++ [ FetchBuildHistory job model.nextPage ]
+                        , effects
+                            ++ [ ApiCall (RouteJobBuilds job model.nextPage) ]
                         )
 
                     else
@@ -482,6 +483,9 @@ handleCallback callback ( model, effects ) =
                 ++ [ NavigateTo <| Routes.toString <| Routes.buildRoute b.id b.name model.job ]
             )
 
+        ApiResponse (RouteJobBuilds _ _) (Ok (Builds history)) ->
+            handleHistoryFetched history ( model, effects )
+
         BuildHistoryFetched (Ok history) ->
             handleHistoryFetched history ( model, effects )
 
@@ -541,7 +545,10 @@ handleHistoryFetched history ( model, effects ) =
 
             else
                 ( { newModel | fetchingHistory = True }
-                , effects ++ [ FetchBuildHistory job history.pagination.nextPage ]
+                , effects
+                    ++ [ ApiCall <|
+                            RouteJobBuilds job history.pagination.nextPage
+                       ]
                 )
 
         _ ->

@@ -132,7 +132,6 @@ type Effect
     | FetchUser
     | FetchBuild Float Int
     | FetchJobBuild Concourse.JobBuildIdentifier
-    | FetchBuildHistory Concourse.JobIdentifier (Maybe Page)
     | FetchBuildPrep Float Int
     | FetchBuildPlan Concourse.BuildId
     | FetchBuildPlanAndResources Concourse.BuildId
@@ -410,10 +409,6 @@ runEffect effect key csrfToken =
         FetchJobBuild jbi ->
             Network.Build.fetchJobBuild jbi
                 |> Task.attempt BuildFetched
-
-        FetchBuildHistory job page ->
-            Network.Build.fetchJobBuilds job page
-                |> Task.attempt BuildHistoryFetched
 
         FetchBuildPrep delay buildId ->
             Process.sleep delay
