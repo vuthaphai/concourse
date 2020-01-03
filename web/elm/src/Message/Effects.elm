@@ -38,6 +38,7 @@ import Network.BuildResources
 import Network.DashboardAPIData
 import Network.Info
 import Network.Job
+import Network.Pagination
 import Network.Pipeline
 import Network.Resource
 import Network.User
@@ -118,7 +119,6 @@ stickyHeaderConfig =
 
 type Effect
     = ApiCall Route
-    | FetchJobBuilds Concourse.JobIdentifier (Maybe Page)
     | FetchResource Concourse.ResourceIdentifier
     | FetchCheck Int
     | FetchVersionedResources Concourse.ResourceIdentifier (Maybe Page)
@@ -194,31 +194,33 @@ type ScrollDirection
 
 toUrl : Route -> String
 toUrl route =
+    let
+        pipelinePrefix teamName pipelineName =
+            [ "api"
+            , "v1"
+            , "teams"
+            , teamName
+            , "pipelines"
+            , pipelineName
+            ]
+    in
     case route of
         RouteJob { teamName, pipelineName, jobName } ->
             Url.Builder.absolute
-                [ "api"
-                , "v1"
-                , "teams"
-                , teamName
-                , "pipelines"
-                , pipelineName
-                , "jobs"
-                , jobName
-                ]
+                (pipelinePrefix teamName pipelineName ++ [ "jobs", jobName ])
                 []
 
         RouteJobs { teamName, pipelineName } ->
             Url.Builder.absolute
-                [ "api"
-                , "v1"
-                , "teams"
-                , teamName
-                , "pipelines"
-                , pipelineName
-                , "jobs"
-                ]
+                (pipelinePrefix teamName pipelineName ++ [ "jobs" ])
                 []
+
+        RouteJobBuilds { teamName, pipelineName, jobName } page ->
+            Url.Builder.absolute
+                (pipelinePrefix teamName pipelineName
+                    ++ [ "jobs", jobName, "builds" ]
+                )
+                (Network.Pagination.params page)
 
 
 method : Route -> String
@@ -237,10 +239,15 @@ expect route =
                     Concourse.decodeJob
                         { teamName = teamName, pipelineName = pipelineName }
 
-        RouteJobs { teamName, pipelineName } ->
+        RouteJobs _ ->
             Http.expectJson <|
                 Json.Decode.map Jobs <|
                     Json.Decode.value
+
+        RouteJobBuilds _ _ ->
+            Http.expectStringResponse <|
+                Network.Pagination.parsePagination Concourse.decodeBuild
+                    >> Result.map Builds
 
 
 runEffect : Effect -> Navigation.Key -> Concourse.CSRFToken -> Cmd Callback
@@ -259,10 +266,6 @@ runEffect effect key csrfToken =
                 }
                 |> Http.toTask
                 |> Task.attempt (ApiResponse route)
-
-        FetchJobBuilds id page ->
-            Network.Build.fetchJobBuilds id page
-                |> Task.attempt JobBuildsFetched
 
         FetchResource id ->
             Network.Resource.fetchResource id
