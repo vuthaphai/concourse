@@ -1,5 +1,9 @@
 package worker
 
+// This package will eventually evolve to becoming a concrete implementation of a runtime
+// As such, Concourse core shouldn't depend on abstractions defined in this package or its child packages
+// General Runtime abstractions will be ported over to the Runtime package
+
 import (
 	"context"
 	"errors"
