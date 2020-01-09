@@ -223,13 +223,16 @@ func (step *TaskStep) Run(ctx context.Context, state RunState) error {
 	)
 
 	if err != nil {
-		if err == context.Canceled || err == context.DeadlineExceeded {
+		switch err {
+		case context.Canceled:
+		case context.DeadlineExceeded:
 			step.registerOutputs(logger, repository, config, result.VolumeMounts, step.containerMetadata)
 		}
+
 		return err
 	}
 
-	step.succeeded = (result.ExitStatus == 0)
+	step.succeeded = result.ExitStatus == 0
 	step.delegate.Finished(logger, ExitStatus(result.ExitStatus))
 
 	step.registerOutputs(logger, repository, config, result.VolumeMounts, step.containerMetadata)
@@ -243,7 +246,6 @@ func (step *TaskStep) Run(ctx context.Context, state RunState) error {
 	}
 
 	return nil
-
 }
 
 func (step *TaskStep) Succeeded() bool {
